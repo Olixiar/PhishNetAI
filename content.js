@@ -1,3 +1,4 @@
+// Email data to be sent to API
 function getEmailData() {
     let emailData = {
         sender: "",
@@ -13,25 +14,25 @@ function getEmailData() {
         emailData.sender = senderElement.getAttribute("email");
     }
 
-    // Get subject
+    // Get email subject
     let subjectElement = document.querySelector("h2.hP");
     if (subjectElement) {
         emailData.subject = subjectElement.innerText;
     }
 
     // Get email body
-    let bodyElement = document.querySelector("div.a3s");
-    if (bodyElement) {
-        emailData.body = bodyElement.innerText;
+    let emailBody = document.querySelector("div.a3s");
+    if (emailBody) {
+        emailData.body = emailBody.innerText;
+
+        // Get links within the email body
+        let linkElements = emailBody.querySelectorAll("a");
+        emailLinks = Array.from(linkElements).map(link => link.href);
+
+         // Get the image URLs within the email body
+        let imageElements = emailBody.querySelectorAll("img");
+        emailData.images = Array.from(imageElements).map(img => img.src);
     }
-
-    // Get all links in the email
-    let linkElements = document.querySelectorAll("a");
-    emailData.links = Array.from(linkElements).map(link => link.href);
-
-    // Get all image URLs
-    let imageElements = document.querySelectorAll("img");
-    emailData.images = Array.from(imageElements).map(img => img.src);
 
     return emailData;
 }
