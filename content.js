@@ -3,6 +3,7 @@ function getEmailData() {
         sender: "",
         subject: "",
         body: "",
+        images: [],
         links: []
     };
 
@@ -19,14 +20,18 @@ function getEmailData() {
     }
 
     // Get email body
-    let bodyElement = document.querySelector("div.a3s"); // Main email body
+    let bodyElement = document.querySelector("div.a3s");
     if (bodyElement) {
         emailData.body = bodyElement.innerText;
     }
 
-    // Get links inside the email
+    // Get all links in the email
     let linkElements = document.querySelectorAll("a");
     emailData.links = Array.from(linkElements).map(link => link.href);
+
+    // Get all image URLs
+    let imageElements = document.querySelectorAll("img");
+    emailData.images = Array.from(imageElements).map(img => img.src);
 
     return emailData;
 }
@@ -35,6 +40,7 @@ function getEmailData() {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "getEmailData") {
         let data = getEmailData();
+        console.log("Extracted Email Data:", data);
         sendResponse(data);
     }
 });

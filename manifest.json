@@ -3,7 +3,7 @@
   "name": "Gmail Phishing Scanner",
   "version": "1.0",
   "description": "Scans open emails for phishing using AI.",
-  "permissions": ["activeTab", "scripting"],
+  "permissions": ["activeTab", "scripting", "storage"],
   "host_permissions": ["https://mail.google.com/*"],
   "background": {
     "service_worker": "background.js"
