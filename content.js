@@ -27,7 +27,7 @@ function getEmailData() {
 
         // Get links within the email body
         let linkElements = emailBody.querySelectorAll("a");
-        emailLinks = Array.from(linkElements).map(link => link.href);
+        emailData.links = Array.from(linkElements).map(link => link.href);
 
          // Get the image URLs within the email body
         let imageElements = emailBody.querySelectorAll("img");
