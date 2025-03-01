@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "manifest_version": 3,
   "name": "Gmail Phishing Scanner",
   "version": "1.0",
@@ -20,3 +21,14 @@
     }
   ]
 }
+=======
+    "name": "Hello Extensions",
+    "description": "Base Level Extension",
+    "version": "1.0",
+    "manifest_version": 3,
+    "action": {
+      "default_popup": "hello.html",
+      "default_icon": "icon.png"
+    }
+  }
+>>>>>>> 1b18a4d77b7564a2c5c237e1efabae00d5490fa3
