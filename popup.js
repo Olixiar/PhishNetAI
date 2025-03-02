@@ -5,16 +5,12 @@ const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/
 async function askGemini(emailData) {
     try {
         // Ensure content is within Gemini's limits
-        const MAX_LENGTH = 150;
+        const MAX_LENGTH = 1000;
         emailData.body = emailData.body.length > MAX_LENGTH ? emailData.body.substring(0, MAX_LENGTH) + "..." : emailData.body;
 
         // Properly formatted question
-        const formattedQuestion = `In 150 words. Please analyze the following email data and determine if there is potential phishing vulnerabilities (percentage) based on the content: sender, subject, body, images, links. Analyze if there is any PII, suspicious or obfuscated URLs, sense of urgency, unusual formatting, wrong information and sensitive requests. Use these information: ${emailData.sender}\nSubject: ${emailData.subject}\nBody: ${emailData.body}\nLinks: ${emailData.links}\nImages: ${emailData.images}\n\n
-        Sender: ${emailData.sender}\n
-        Subject: ${emailData.subject}\n
-        Body: ${emailData.body}\n
-        Links: ${emailData.links.join("\n")}\n
-        Images: ${emailData.images.length} image(s) detected.\n`;
+        const formattedQuestion = `In 150 words. how likely is this email (percentage) is to be a phishing attack based on the content: sender, subject, body, images, links. Analyze if there is any PII, suspicious or obfuscated URLs, sense of urgency, unusual formatting, wrong information, inconsistencies, or sensitive requests. If there are verified/official sender emails or links, lower the percentage accordingly.
+Use this information: Sender:${emailData.sender}\nSubject: ${emailData.subject}\nBody: ${emailData.body}\nLinks: ${emailData.links}\nImages: ${emailData.images}\n`;
 
         // Make the request
         const response = await fetch(`${GEMINI_API_URL}?key=${API_KEY}`, {
