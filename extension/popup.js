@@ -1,5 +1,18 @@
 const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
+// Function to fetch API key from backend
+async function getApiKey() {
+    try {
+        const response = await fetch("http://localhost:5000/api/get-key");
+        if (!response.ok) throw new Error("Failed to fetch API key");
+        const data = await response.json();
+        return data.apiKey; // Assuming the backend returns { "apiKey": "your-key" }
+    } catch (error) {
+        console.error("Error fetching API key:", error);
+        return null;
+    }
+}
+
 // Function to send email data to Gemini API
 async function askGemini(emailData, apiKey) {
     try {
@@ -8,7 +21,7 @@ async function askGemini(emailData, apiKey) {
         emailData.body = emailData.body.length > MAX_LENGTH ? emailData.body.substring(0, MAX_LENGTH) + "..." : emailData.body;
 
         // Properly formatted question
-        const formattedQuestion = `In 150 words, how likely is this email from to be a phishing attack based on the content: sender, subject, body, images, links. Analyze if there is any PII, suspicious or obfuscated URLs, sense of urgency, unusual formatting, wrong information, inconsistencies, or sensitive requests. If there are verified/official sender emails or links, lower the percentage accordingly.
+        const formattedQuestion = `In 150 words, how likely is this email from to be a phishing attack (from very low, low, medium, high, very high risk) based on the content: sender, subject, body, images, links. Analyze if there is any PII, suspicious or obfuscated URLs, sense of urgency, unusual formatting, wrong information, inconsistencies, or sensitive requests. If there are verified/official sender emails or links, lower the percentage accordingly.
 Use this information: Sender:${emailData.sender}\nSubject: ${emailData.subject}\nBody: ${emailData.body}\nLinks: ${emailData.links}\nImages: ${emailData.images}\n`;
 
         // Make the request
@@ -45,24 +58,34 @@ Use this information: Sender:${emailData.sender}\nSubject: ${emailData.subject}\
     }
 }
 
-document.getElementById("scan-email").addEventListener("click", () => {
+// Handle Scan Button Click
+document.getElementById("scan-email").addEventListener("click", async () => {
     const scanButton = document.getElementById("scan-email");
     const loadingSpinner = document.getElementById("loading-spinner");
-    const phishingInfo = document.getElementById("phishing-info"); // Get the phishing info div
+    const phishingInfo = document.getElementById("phishing-info");
 
     // Change button text and disable it
     scanButton.innerText = "Scanning...";
     scanButton.disabled = true;
-    scanButton.style.background = "#a0a0a0"; // Change color to indicate disabled state
+    scanButton.style.background = "#a0a0a0";
 
-    // Show loading spinner and phishing info link
+    // Show loading spinner
     loadingSpinner.style.display = "block";
-    phishingInfo.style.display = "block"; // Ensure link is visible while scanning
+    phishingInfo.style.display = "block";
 
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    // Get API key from backend
+    const API_KEY = await getApiKey();
+    if (!API_KEY) {
+        console.error("API key not available.");
+        resetButton();
+        return;
+    }
+
+    // Query the active tab
+    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
         if (tabs.length === 0) {
             console.error("No active tab found.");
-            resetButton(); // Reset button on error
+            resetButton();
             return;
         }
 
@@ -71,54 +94,36 @@ document.getElementById("scan-email").addEventListener("click", () => {
         chrome.scripting.executeScript({
             target: { tabId: activeTabId },
             files: ["content.js"]
-        }, () => {
+        }, async () => {
             if (chrome.runtime.lastError) {
                 console.error("Error injecting content script:", chrome.runtime.lastError.message);
-                resetButton(); // Reset button on error
+                resetButton();
                 return;
             }
 
-            chrome.storage.local.get("API_KEY", (data) => {
-                if (chrome.runtime.lastError || !data.API_KEY) {
-                    console.error("API key retrieval failed.");
-                    resetButton(); // Reset button on error
+            chrome.tabs.sendMessage(activeTabId, { action: "getEmailData" }, async (response) => {
+                if (chrome.runtime.lastError || !response) {
+                    console.error("Error: No email data received.");
+                    resetButton();
                     return;
                 }
 
-                const API_KEY = data.API_KEY;
+                console.log("Extracted Email Data:", response);
+                const analysisResult = await askGemini(response, API_KEY);
 
-                chrome.tabs.sendMessage(activeTabId, { action: "getEmailData" }, (response) => {
-                    if (chrome.runtime.lastError || !response) {
-                        console.error("Error: No email data received.");
-                        resetButton(); // Reset button if no response
-                        return;
-                    }
+                console.log("Gemini API Response:", analysisResult);
+                alert("Phishing Analysis Complete:\n" + analysisResult);
 
-                    console.log("Extracted Email Data:", response);
-                    askGemini(response, API_KEY)
-                        .then(responseData => {
-                            console.log("Gemini API Response:", responseData);
-                            alert("Phishing Analysis Complete:\n" + responseData);
-                        })
-                        .catch(error => {
-                            console.error("Error sending request to Gemini API:", error);
-                        })
-                        .finally(() => {
-                            resetButton(); // Reset button after completion
-                        });
-                });
+                resetButton();
             });
         });
     });
 
-    // Function to reset button and hide the phishing link after scanning
     function resetButton() {
-        scanButton.innerHTML = "🛡️ <span>Scan</span>"; // Restore shield icon and text
+        scanButton.innerHTML = "🛡️ <span>Scan</span>";
         scanButton.disabled = false;
-        scanButton.style.background = "#60bad7"; // Restore original color
-        loadingSpinner.style.display = "none"; // Hide spinner
-        phishingInfo.style.display = "none"; // Hide phishing info after scanning
+        scanButton.style.background = "#60bad7";
+        loadingSpinner.style.display = "none";
+        phishingInfo.style.display = "none";
     }
 });
-
-
