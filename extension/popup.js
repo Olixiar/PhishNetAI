@@ -3,13 +3,20 @@ const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/
 // Function to fetch API key from backend
 async function getApiKey() {
     try {
-        const response = await fetch("http://localhost:5000/api/get-key");
+        const response = await fetch("https://phishnetai.onrender.com/api/get-key");
         if (!response.ok) throw new Error("Failed to fetch API key");
         const data = await response.json();
         return data.apiKey; // Assuming the backend returns { "apiKey": "your-key" }
     } catch (error) {
-        console.error("Error fetching API key:", error);
-        return null;
+        try {
+            const response = await fetch("http://localhost:5000/api/get-key");
+            if (!response.ok) throw new Error("Failed to fetch API key");
+            const data = await response.json();
+            return data.apiKey; // Assuming the backend returns { "apiKey": "your-key" }
+        } catch (error) {
+            console.error("Error fetching API key:", error);
+            return null;
+        }
     }
 }
 
