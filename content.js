@@ -1,4 +1,3 @@
-
 // Function to extract email data
 function getEmailData() {
     let emailData = {
